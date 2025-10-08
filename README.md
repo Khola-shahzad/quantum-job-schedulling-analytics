@@ -27,6 +27,3 @@ This project simulates and analyzes **quantum job scheduling algorithms** using 
 | Frontend | Streamlit (Plotly visualizations) |
 | Other | dotenv, requests |
 
----
-
-## 📂 Project Structure
