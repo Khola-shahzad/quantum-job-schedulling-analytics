@@ -1,0 +1,9 @@
+Flask
+pandas
+dask[complete]
+plotly
+streamlit
+pyarrow
+python-dotenv
+pymongo
+requests

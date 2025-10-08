@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.venv/
+venv/
+.env.docker
+
+# Byte-compiled
+*.py[cod]
+*$py.class
+
+# Docker
+*.log
+docker-data/
+mongo_data/
+*.pid
+*.seed
+*.tar
+*.bak
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.egg-info/
+dist/
+build/
+
+# Not needed files
+*.csv
