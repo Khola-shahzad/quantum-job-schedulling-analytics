@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-BACKEND_URL = "http://127.0.0.1:5000"
+BACKEND_URL = "http://backend:5000"
 
 st.set_page_config(page_title="Quantum Job Scheduling", layout="wide", initial_sidebar_state="expanded")
 st.markdown("""
