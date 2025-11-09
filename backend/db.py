@@ -1,7 +1,3 @@
-"""
-MongoDB helper (pymongo).
-Insert / fetch jobs, results, metrics.
-"""
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os

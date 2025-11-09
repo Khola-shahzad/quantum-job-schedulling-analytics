@@ -7,3 +7,4 @@ pyarrow
 python-dotenv
 pymongo
 requests
+hdfs

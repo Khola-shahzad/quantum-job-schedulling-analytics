@@ -1,7 +1,4 @@
-"""
-Generate synthetic quantum job logs.
-Fields: job_id, arrival_time (ISO), qubits_required, execution_time, priority
-"""
+
 import csv
 import random
 import uuid

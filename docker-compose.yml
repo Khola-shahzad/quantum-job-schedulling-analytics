@@ -1,4 +1,7 @@
+version: "3.9"
+
 services:
+  # ------------------ MongoDB ------------------
   mongo:
     image: mongo:6.0.6-jammy
     container_name: quantum_mongo
@@ -8,7 +11,30 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  # ------------------ Hadoop NameNode ------------------
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-namenode
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - "9870:9870"   # Web UI
+      - "9000:9000"   # HDFS main port
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
 
+  # ------------------ Hadoop DataNode ------------------
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-datanode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+    depends_on:
+      - hadoop-namenode
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+
+  # ------------------ Backend (Flask + HDFS + Mongo) ------------------
   backend:
     build: ./backend
     container_name: quantum_backend
@@ -17,11 +43,16 @@ services:
       - .env.docker
     depends_on:
       - mongo
+      - hadoop-namenode
+      - hadoop-datanode
     ports:
       - "5000:5000"
     volumes:
       - ./data:/app/data
+    environment:
+      - HDFS_URL=http://hadoop-namenode:9870
 
+  # ------------------ Frontend (Streamlit) ------------------
   frontend:
     build: ./frontend
     container_name: quantum_frontend
@@ -33,5 +64,8 @@ services:
     environment:
       - STREAMLIT_SERVER_PORT=8501
 
+# ------------------ Volumes ------------------
 volumes:
   mongo_data:
+  hadoop_namenode:
+  hadoop_datanode:

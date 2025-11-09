@@ -7,6 +7,7 @@ APIs:
 
 from flask import Flask, request, jsonify
 from pathlib import Path
+from utils_hdfs import save_to_hdfs
 import pandas as pd
 from datetime import datetime
 import dask.dataframe as dd
@@ -18,7 +19,7 @@ from db import insert_jobs, insert_results, get_results
 
 app = Flask(__name__)
 
-# ✅ Use an internal path inside container
+#  Use an internal path inside container
 DATA_PATH = Path("/app/data/jobs_10k.csv")
 DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -91,6 +92,15 @@ def run_simulation():
             out_db[col] = out_db[col].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     insert_results(out_db.to_dict(orient="records"), metrics)
+
+    # 7️⃣ Save simulation results to HDFS
+    results_csv = "/app/data/simulation_results.csv"
+    out_df.to_csv(results_csv, index=False)
+    try:
+        save_to_hdfs(results_csv, f"/simulations/{algo}_results.csv")
+    except Exception as e:
+        print(f"HDFS save error: {e}")
+
 
     return jsonify({"message": "Simulation complete", "metrics": metrics})
 
