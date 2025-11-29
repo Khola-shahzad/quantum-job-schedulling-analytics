@@ -1,24 +1,34 @@
-from hdfs import InsecureClient
+# utils_hdfs.py
+import requests
 import os
 
-def get_hdfs_client():
-    """
-    Connect to HDFS NameNode using the environment variable HDFS_URL.
-    Example: http://hadoop-namenode:9870
-    """
-    hdfs_url = os.getenv("HDFS_URL", "http://hadoop-namenode:9870")
-    return InsecureClient(hdfs_url, user="root")
+HDFS_NAMENODE = os.getenv("HDFS_URL", "http://hadoop-namenode:9870")
 
-
-def save_to_hdfs(local_path, hdfs_path):
+def save_to_hdfs(local_file, hdfs_path):
     """
-    Uploads a local file to HDFS.
-    Creates directory if missing.
+    Upload files to HDFS using WebHDFS REST API (no CLI needed).
     """
     try:
-        client = get_hdfs_client()
-        client.makedirs(os.path.dirname(hdfs_path))
-        client.upload(hdfs_path, local_path, overwrite=True)
-        print(f"Saved to HDFS: {hdfs_path}")
+        # WebHDFS requires two-step upload
+        url = f"{HDFS_NAMENODE}/webhdfs/v1{hdfs_path}?op=CREATE&overwrite=true"
+        r1 = requests.put(url, allow_redirects=False)
+
+        if "Location" not in r1.headers:
+            print("HDFS error: missing redirect:", r1.text)
+            return False
+
+        upload_url = r1.headers["Location"]
+
+        with open(local_file, "rb") as f:
+            r2 = requests.put(upload_url, data=f)
+
+        if r2.status_code not in (200, 201):
+            print("Upload failed:", r2.text)
+            return False
+
+        print("Saved to HDFS:", hdfs_path)
+        return True
+
     except Exception as e:
-        print(f"HDFS upload failed: {e}")
+        print("HDFS upload exception:", str(e))
+        return False

@@ -1,10 +1,102 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantum Job Scheduling — Dashboard</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- optional: include a small icon font for nicer visuals -->
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <script src="/static/js/script.js" defer></script>
 </head>
 <body>
-$END$
+  <div class="app">
+    <header class="topbar">
+      <h1>Quantum Job Scheduling — Dashboard</h1>
+    </header>
+
+    <main class="main-grid">
+      <section class="panel card">
+        <form id="simForm" class="form">
+          <div class="form-row">
+            <label for="algorithm">Scheduling Algorithm</label>
+            <select id="algorithm" name="algorithm">
+              <option value="FIFO">FIFO</option>
+              <option value="RoundRobin">Round Robin</option>
+              <option value="Priority">Priority</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="num_jobs">Number of jobs</label>
+            <input id="num_jobs" name="num_jobs" type="number" min="1" value="1000" />
+          </div>
+
+          <div class="form-row">
+            <button id="runBtn" type="submit">Run Simulation</button>
+          </div>
+        </form>
+        <div class="note">Tip: large job counts may take longer on server — start small for testing.</div>
+      </section>
+
+      <section class="panel card metrics" id="metricsPanel" aria-live="polite" style="display:none;">
+        <div class="metric">
+          <div class="metric-title">Algorithm</div>
+          <div class="metric-value" id="metric_algo">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">Avg waiting</div>
+          <div class="metric-value" id="metric_avg_wait">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">Avg turnaround</div>
+          <div class="metric-value" id="metric_avg_turn">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">Throughput</div>
+          <div class="metric-value" id="metric_throughput">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-title">CPU utilization</div>
+          <div class="metric-value" id="metric_cpu">—</div>
+        </div>
+      </section>
+
+      <section class="panel card charts" id="chartsPanel" style="display:none;">
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3>Summary Metrics</h3>
+            <canvas id="barChart" aria-label="Bar chart of metrics"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>CPU Utilization (time series)</h3>
+            <canvas id="lineChart" aria-label="CPU utilization line chart"></canvas>
+            <div class="muted small" id="lineHint">If available, this chart shows CPU over time.</div>
+          </div>
+        </div>
+
+        <div class="chart-row">
+          <div class="gantt-card">
+            <h3>Gantt Timeline (jobs)</h3>
+            <div id="ganttContainer" class="gantt-container">
+              <!-- Gantt bars will be inserted here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel card" id="jobsPanel" style="display:none;">
+        <h3>Jobs (sample)</h3>
+        <div id="jobsTableContainer"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small>Quantum Scheduler Dashboard</small>
+    </footer>
+  </div>
 </body>
 </html>

@@ -1,90 +1,124 @@
+# schedulers.py
 """
 Scheduling algorithms: FIFO, Round Robin, Priority.
-Assumes job['arrival_time'] is a datetime-like object and execution_time is seconds (int).
+Each job is a dict with:
+    job_id, arrival_time (datetime), execution_time (int), priority
 """
+
 from datetime import timedelta
 from collections import deque
-import copy
+
 
 def fifo_scheduler(jobs):
     jobs_sorted = sorted(jobs, key=lambda j: j["arrival_time"])
-    current_time = jobs_sorted[0]["arrival_time"] if jobs_sorted else None
-    scheduled = []
+    current_time = jobs_sorted[0]["arrival_time"]
+    result = []
+
     for j in jobs_sorted:
         arrival = j["arrival_time"]
-        if current_time is None or current_time < arrival:
+        if current_time < arrival:
             current_time = arrival
+
         start = current_time
-        end = start + timedelta(seconds=int(j["execution_time"]))
-        waiting = (start - arrival).total_seconds()
-        turnaround = (end - arrival).total_seconds()
-        scheduled.append({**j, "start_time": start, "end_time": end, "waiting_time": waiting, "turnaround_time": turnaround})
+        end = start + timedelta(seconds=j["execution_time"])
+
+        result.append({
+            "job_id": j["job_id"],
+            "arrival_time": arrival,
+            "start_time": start,
+            "end_time": end
+        })
+
         current_time = end
-    return scheduled
+
+    return result
+
 
 def round_robin_scheduler(jobs, time_slice=10):
     jobs_sorted = sorted(jobs, key=lambda j: j["arrival_time"])
-    # copy and add remaining/first_start
     queue = deque()
-    results = []
+    slices = []
     idx = 0
-    current_time = jobs_sorted[0]["arrival_time"] if jobs_sorted else None
-    proc = []
-    for j in jobs_sorted:
-        r = dict(j)
-        r["remaining"] = int(r["execution_time"])
-        r["first_start"] = None
-        proc.append(r)
 
-    while idx < len(proc) or queue:
-        while idx < len(proc) and proc[idx]["arrival_time"] <= current_time:
-            queue.append(proc[idx]); idx += 1
+    if not jobs_sorted:
+        return []
+
+    current_time = jobs_sorted[0]["arrival_time"]
+
+    # extend job objects
+    jobs_ex = []
+    for j in jobs_sorted:
+        jobs_ex.append({
+            **j,
+            "remaining": j["execution_time"]
+        })
+
+    while idx < len(jobs_ex) or queue:
+        # load jobs into queue
+        while idx < len(jobs_ex) and jobs_ex[idx]["arrival_time"] <= current_time:
+            queue.append(jobs_ex[idx])
+            idx += 1
+
         if not queue:
-            if idx < len(proc):
-                current_time = proc[idx]["arrival_time"]
-                continue
-            else:
-                break
+            current_time = jobs_ex[idx]["arrival_time"]
+            continue
+
         job = queue.popleft()
-        if job["first_start"] is None:
-            job["first_start"] = current_time
         run = min(time_slice, job["remaining"])
-        job["remaining"] -= run
+
         start = current_time
-        current_time = current_time + timedelta(seconds=run)
+        end = start + timedelta(seconds=run)
+
+        slices.append({
+            "job_id": job["job_id"],
+            "arrival_time": job["arrival_time"],
+            "start_time": start,
+            "end_time": end
+        })
+
+        job["remaining"] -= run
+        current_time = end
+
+        # add newly arrived jobs during execution
+        while idx < len(jobs_ex) and jobs_ex[idx]["arrival_time"] <= current_time:
+            queue.append(jobs_ex[idx])
+            idx += 1
+
         if job["remaining"] > 0:
-            # enqueue newly arrived
-            while idx < len(proc) and proc[idx]["arrival_time"] <= current_time:
-                queue.append(proc[idx]); idx += 1
             queue.append(job)
-        else:
-            waiting = (job["first_start"] - job["arrival_time"]).total_seconds()
-            turnaround = (current_time - job["arrival_time"]).total_seconds()
-            results.append({**job, "start_time": job["first_start"], "end_time": current_time, "waiting_time": waiting, "turnaround_time": turnaround})
-    return results
+
+    return slices
+
 
 def priority_scheduler(jobs):
     jobs_sorted = sorted(jobs, key=lambda j: j["arrival_time"])
-    current_time = jobs_sorted[0]["arrival_time"] if jobs_sorted else None
+    current_time = jobs_sorted[0]["arrival_time"]
     ready = []
-    results = []
     idx = 0
+    result = []
+
     while idx < len(jobs_sorted) or ready:
         while idx < len(jobs_sorted) and jobs_sorted[idx]["arrival_time"] <= current_time:
-            ready.append(jobs_sorted[idx]); idx += 1
+            ready.append(jobs_sorted[idx])
+            idx += 1
+
         if not ready:
-            if idx < len(jobs_sorted):
-                current_time = jobs_sorted[idx]["arrival_time"]
-                continue
-            else:
-                break
-        # smallest priority number = highest priority
+            current_time = jobs_sorted[idx]["arrival_time"]
+            continue
+
         ready.sort(key=lambda j: j["priority"])
-        job = ready.pop(0)
+        j = ready.pop(0)
+
         start = current_time
-        end = start + timedelta(seconds=int(job["execution_time"]))
-        waiting = (start - job["arrival_time"]).total_seconds()
-        turnaround = (end - job["arrival_time"]).total_seconds()
-        results.append({**job, "start_time": start, "end_time": end, "waiting_time": waiting, "turnaround_time": turnaround})
+        end = start + timedelta(seconds=j["execution_time"])
+
+        result.append({
+            "job_id": j["job_id"],
+            "arrival_time": j["arrival_time"],
+            "start_time": start,
+            "end_time": end
+        })
+
         current_time = end
-    return results
+
+    return result
